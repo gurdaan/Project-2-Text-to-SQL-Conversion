@@ -13,3 +13,7 @@ This folder Contains the solution for Part 2: Additional Features
 ### Google Collab Link
 
 https://colab.research.google.com/drive/128sBCKkm0L2nvtPbiV83cBh4KSXTlI9s?usp=sharing
+
+Here's a quick demo of the application:
+
+![Demo of the application](Sql_Demo.gif)
