@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyd
+*.pyo
+*.so
+
+# Virtual Environment
+venv/
+.env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache & Build
+.cache/
+bin/
+obj/
+*.db
+*.sqlite
+*.log
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Python Packages
+*.egg-info/
+dist/
+build/
+
+# Other
+Directory.Build.props
+bitsandbytes/

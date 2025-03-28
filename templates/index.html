@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to SQL Converter</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .input-section, .output-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 110%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            resize: vertical;
+            font-family: monospace;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .sql-output {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .results-table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Text to SQL Converter</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2>Input Your Request</h2>
+            <textarea id="text-input" placeholder="Enter your natural language query here...\nExample: Show all users who joined last month"></textarea>
+            <button onclick="generateSQL()" id="generate-btn">Generate SQL</button>
+            
+            <h3>Generated SQL</h3>
+            <div class="sql-output" id="sql-output" contenteditable="true"></div>
+            <button onclick="executeSQL()" id="execute-btn">Execute Query</button>
+        </div>
+
+        <div class="output-section">
+            <h2>Query Results</h2>
+            <div id="results-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mock database
+        const mockDB = {
+            users: [
+                { id: 1, name: 'John Doe', email: 'john@example.com', created_at: '2023-01-15' },
+                { id: 2, name: 'Jane Smith', email: 'jane@example.com', created_at: '2023-02-20' },
+                { id: 3, name: 'Bob Johnson', email: 'bob@example.com', created_at: '2023-03-10' }
+            ],
+            orders: [
+                { id: 101, user_id: 1, amount: 150, date: '2023-03-01' },
+                { id: 102, user_id: 2, amount: 200, date: '2023-03-05' }
+            ]
+        };
+
+        async function generateSQL() {
+            const textInput = document.getElementById('text-input').value;
+            const generateBtn = document.getElementById('generate-btn');
+            const sqlOutput = document.getElementById('sql-output');
+            
+            if (!textInput.trim()) {
+                alert("Please enter a query");
+                return;
+            }
+            
+            generateBtn.innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch('/generate_sql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text_input: textInput })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                sqlOutput.textContent = data.sql;
+            } catch (error) {
+                console.error('Error:', error);
+                sqlOutput.textContent = "Error generating SQL: " + error.message;
+            } finally {
+                generateBtn.textContent = 'Generate SQL';
+            }
+        }
+        
+        async function executeSQL() {
+            const sql = document.getElementById('sql-output').textContent;
+            const executeBtn = document.getElementById('execute-btn');
+            const resultsContainer = document.getElementById('results-container');
+            
+            executeBtn.innerHTML = '<div class="loading"></div>';
+            resultsContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch('http://localhost:8000/get_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sql: sql })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === "error") {
+                    throw new Error(result.message);
+                }
+                
+                if (result.data && Object.keys(result.data).length > 0) {
+                    // Get all column names from the data object
+                    const columns = Object.keys(result.data);
+                    
+                    // Get the number of rows (assuming all columns have same number of items)
+                    const rowCount = Object.keys(result.data[columns[0]]).length;
+                    
+                    // Generate table HTML
+                    const html = `
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array.from({length: rowCount}, (_, i) => `
+                                    <tr>
+                                        ${columns.map(col => `
+                                            <td>${result.data[col][i]}</td>
+                                        `).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    resultsContainer.innerHTML = html;
+                } else {
+                    resultsContainer.innerHTML = '<div class="no-results">No results found</div>';
+                }
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="error">Error executing query: ${error.message}</div>`;
+            } finally {
+                executeBtn.textContent = 'Execute Query';
+            }
+        }
+            </script>
+</body>
+</html>
