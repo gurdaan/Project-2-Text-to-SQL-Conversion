@@ -5,14 +5,17 @@ from Part_1_Agent.agent import create_query
 from Part_1_Agent.get_table import execute_northwind_query
 
 app = FastAPI()
+origins = [
+    "http://localhost:3000",  # Example: Your frontend running on port 3000
+    "http://127.0.0.1:3000",  # Example: Another way to access localhost
+    "*",                      # Allows all origins (not recommended for production)
+]
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 templates = Jinja2Templates(directory="templates")
@@ -38,7 +41,8 @@ async def get_data(request: Request):
             sql,
             as_dataframe=True
         )
-        return {"status": "success", "data": results}
+        results_serializable = results.to_dict(orient="records")
+        return {"status": "success", "data": results_serializable}
     
     except Exception as e:
         return {"status": "error", "message": str(e)}

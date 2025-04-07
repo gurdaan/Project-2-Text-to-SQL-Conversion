@@ -195,7 +195,7 @@
             resultsContainer.innerHTML = '';
             
             try {
-                const response = await fetch('http://localhost:8000/get_data', {
+                const response = await fetch('/get_data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -204,19 +204,13 @@
                 });
                 
                 const result = await response.json();
-                
+
                 if (result.status === "error") {
                     throw new Error(result.message);
                 }
-                
+
                 if (result.data && Object.keys(result.data).length > 0) {
-                    // Get all column names from the data object
-                    const columns = Object.keys(result.data);
-                    
-                    // Get the number of rows (assuming all columns have same number of items)
-                    const rowCount = Object.keys(result.data[columns[0]]).length;
-                    
-                    // Generate table HTML
+                    const columns = Object.keys(result.data[0]); // Corrected: Access keys of the first object in the list
                     const html = `
                         <table class="results-table">
                             <thead>
@@ -225,21 +219,21 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Array.from({length: rowCount}, (_, i) => `
+                                ${result.data.map(row => `
                                     <tr>
                                         ${columns.map(col => `
-                                            <td>${result.data[col][i]}</td>
+                                            <td>${row[col]}</td>
                                         `).join('')}
                                     </tr>
                                 `).join('')}
                             </tbody>
                         </table>
                     `;
-                    
                     resultsContainer.innerHTML = html;
                 } else {
                     resultsContainer.innerHTML = '<div class="no-results">No results found</div>';
                 }
+
             } catch (error) {
                 resultsContainer.innerHTML = `<div class="error">Error executing query: ${error.message}</div>`;
             } finally {
